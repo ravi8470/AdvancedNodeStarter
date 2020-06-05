@@ -13,7 +13,15 @@ const redisClient = require('redis').createClient({
 const util = require('util');
 redisClient.get = util.promisify(redisClient.get);
 
+mongoose.Query.prototype.cache = async function(){
+  this.useCache = true;
+  return this;
+}
+
 mongoose.Query.prototype.exec = async function () {
+  if(!this.useCache){
+    return exec.apply(this, arguments);
+  }
   console.log('I AM ABOUT TO RUN A QUERY');
   const key = JSON.stringify(Object.assign({}, this.getQuery(), {
     collection: this.mongooseCollection.name
