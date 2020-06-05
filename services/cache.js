@@ -11,15 +11,16 @@ const redisClient = require('redis').createClient({
   password: `${process.env.REDIS_PASSWORD}`,
 });
 const util = require('util');
-redisClient.get = util.promisify(redisClient.get);
+redisClient.hget = util.promisify(redisClient.hget);
 
-mongoose.Query.prototype.cache = async function(){
+mongoose.Query.prototype.cache = async function (options = {}) {
   this.useCache = true;
+  this.hashKey = JSON.stringify(options.key || '');
   return this;
 }
 
 mongoose.Query.prototype.exec = async function () {
-  if(!this.useCache){
+  if (!this.useCache) {
     return exec.apply(this, arguments);
   }
   console.log('I AM ABOUT TO RUN A QUERY');
@@ -27,17 +28,17 @@ mongoose.Query.prototype.exec = async function () {
     collection: this.mongooseCollection.name
   }));
 
-  const cachedVal = await redisClient.get(key);
+  const cachedVal = await redisClient.hget(this.hashKey, key);
 
   if (cachedVal) {
-    const doc =  JSON.parse(cachedVal);
+    const doc = JSON.parse(cachedVal);
 
     return Array.isArray(doc) ? doc.map(d => new this.model(d)) : new this.model(doc);
   }
 
   const result = await exec.apply(this, arguments);
 
-  redisClient.set(key, JSON.stringify(result));
+  redisClient.hset(this.hashKey, key, JSON.stringify(result));
 
   return result;
 }
