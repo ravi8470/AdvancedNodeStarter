@@ -2,17 +2,6 @@ const mongoose = require('mongoose');
 const requireLogin = require('../middlewares/requireLogin');
 const Blog = mongoose.model('Blog');
 
-const dotenv = require('dotenv');
-dotenv.config();
-
-const redisClient = require('redis').createClient({
-  port: 6379,
-  host: '127.0.0.1',
-  password: `${process.env.REDIS_PASSWORD}`,
-});
-const util = require('util');
-redisClient.get = util.promisify(redisClient.get);
-
 module.exports = app => {
   app.get('/api/blogs/:id', requireLogin, async (req, res) => {
     const blog = await Blog.findOne({
