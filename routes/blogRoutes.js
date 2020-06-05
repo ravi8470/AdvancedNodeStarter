@@ -1,7 +1,13 @@
 const mongoose = require('mongoose');
 const requireLogin = require('../middlewares/requireLogin');
-
 const Blog = mongoose.model('Blog');
+const redisClient = require('redis').createClient({
+  port: 6379,
+  host: '127.0.0.1',
+  password: 'redis',
+});
+const util = require('util');
+redisClient.get = util.promisify(redisClient.get);
 
 module.exports = app => {
   app.get('/api/blogs/:id', requireLogin, async (req, res) => {
