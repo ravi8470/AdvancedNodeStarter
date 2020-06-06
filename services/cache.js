@@ -1,5 +1,7 @@
 const mongoose = require('mongoose');
 
+const keys = require('../config/keys');
+
 const exec = mongoose.Query.prototype.exec;
 
 const dotenv = require('dotenv');
@@ -8,7 +10,7 @@ dotenv.config();
 const redisClient = require('redis').createClient({
   port: 6379,
   host: '127.0.0.1',
-  password: `${process.env.REDIS_PASSWORD}`,
+  password: `${keys.redisPass}`,
 });
 const util = require('util');
 redisClient.hget = util.promisify(redisClient.hget);
@@ -23,7 +25,6 @@ mongoose.Query.prototype.exec = async function () {
   if (!this.useCache) {
     return exec.apply(this, arguments);
   }
-  console.log('I AM ABOUT TO RUN A QUERY');
   const key = JSON.stringify(Object.assign({}, this.getQuery(), {
     collection: this.mongooseCollection.name
   }));
